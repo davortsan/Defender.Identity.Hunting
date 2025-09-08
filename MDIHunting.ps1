@@ -122,12 +122,16 @@ $queries = @("let Groups = dynamic(['Domain Admins','Enterprise Admins','Sensiti
     "IdentityLogonEvents| where Application == @'Active Directory' | where AccountDomain == @'msdemo.org' | where ActionType == @'LogonFailed' | where FailureReason == @'WrongPassword' or FailureReason == @'AccountLocked' | summarize FailureReason = count() by DeviceName, IPAddress, AccountUpn | where FailureReason > 15 //depending on the Account Lockout threshold",
     "IdentityLogonEvents | project Timestamp, AccountName, DeviceName, LogonType | summarize LastLogon = max(Timestamp) by AccountName, LogonType, DeviceName | where LastLogon < ago( 14d)")
 
-Write-Host "===============================================================================" -ForegroundColor Yellow
-Write-Host "Microsoft Defender for Identity Hunting Queries" -ForegroundColor Yellow
-Write-Host "===============================================================================" -ForegroundColor Yellow
+
+$html = "<html><body><h1>Microsoft Defender for Identity Hunting Queries</h1><table border='1'><tr><th>Title</th><th>Result</th><th>Output</th></tr>";
+
+#Write-Host "===============================================================================" -ForegroundColor Yellow
+#Write-Host "Microsoft Defender for Identity Hunting Queries" -ForegroundColor Yellow
+#Write-Host "===============================================================================" -ForegroundColor Yellow
 
 for($i=0; $i -lt$titles.Length; $i++) {
-    Write-Host $titles[$i] -ForegroundColor White -NoNewline
+    
+    #Write-Host $titles[$i] -ForegroundColor White -NoNewline
     $query = $queries[$i]
     $body = ConvertTo-Json -InputObject @{ Query = $query }
 
@@ -135,11 +139,44 @@ for($i=0; $i -lt$titles.Length; $i++) {
 
     $response = Invoke-WebRequest -Method Post -Uri $url -Headers $headers -Body $body -ErrorAction Stop
     $results = ($response | ConvertFrom-Json).Results
-    if ($results.Length -eq 0) {
-        Write-Host " OK!" -ForegroundColor Green
-    } else {
-        Write-Host " ALERT!" -ForegroundColor Red
-        $results | Format-Table
 
+    if ($results.Length -eq 0) {
+        #Write-Host " OK!" -ForegroundColor Green
+        $html = $html + "<tr><td>" + $titles[$i] + "</td><td style='color:green'>" + "OK" + "</td><td>" + $results + "</td></tr>"
+    } else {
+        switch ($i) {
+            29 {
+                $subHTML = "";
+                foreach($current in $results) { $subHTML = $subHTML + $current.UserPrincipalName + " - " + $current.AssignedRoles + "<br />" }
+            }
+            default {
+                $subHTML = $results | Format-Table -AutoSize
+            }
+        }
+        $html = $html + "<tr><td>" + $titles[$i] + "</td><td style='color:red'>" + "ALERT!" + "</td><td>" + $subHTML + "</td></tr>"
+        #Write-Host " ALERT!" -ForegroundColor Red
+        #$results | Format-Table -AutoSize
     }
 }
+
+$html = $html + "</table></body></html>"
+$path = "C:\Temp\MDIHunting.html"
+Set-Content -Path $path -Value $html
+Invoke-Item -Path $path
+
+# Email parameters
+$From = "davortsan@outlook.com"
+$To = "davidort@microsoft.com"
+$Subject = "Test Email - SendGrid via PowerShell"
+$Body = $html
+$SMTPServer = "smtp.sendgrid.net"
+$SMTPPort = 587
+$APIKeyUser = "apikey"  # This is the literal string "apikey"
+$APIKeyPass = "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"  # Repla
+$pass = ConvertTo-SecureString -AsPlainText $APIKeyPass -Force
+$SecureString = $pass
+# Users you password securly
+$MySecureCreds = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $APIKeyUser,$SecureString 
+
+# Send the email
+Send-MailMessage -From $From -To $To -Subject $Subject -Body $Body -SmtpServer $SMTPServer -Port $SMTPPort -Credential $MySecureCreds
