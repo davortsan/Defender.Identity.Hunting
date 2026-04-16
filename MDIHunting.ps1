@@ -1,6 +1,6 @@
-$tenantID = "3cdeeda9-1dec-46f0-90dc-261e76ea4e99"
-$appID = "743c9212-cf83-4a35-a4be-bd9d73ef2099"
-$appSecret = "W.s8Q~x1XO8d8QF1Gqg2xKiRXsl~F2IrO7pLsayS"
+$tenantID = "<TENANT_ID>"
+$appID = "<CLIENT_ID_APP_REGISTRATION>"
+$appSecret = "<SECRET_APP_REGISTRATION>"
 $resourceAppIdUri = 'https://graph.microsoft.com'
 $oAuthUri = "https://login.microsoftonline.com/$tenantId/oauth2/token"
 
@@ -165,14 +165,14 @@ Set-Content -Path $path -Value $html
 Invoke-Item -Path $path
 
 # Email parameters
-$From = "davortsan@outlook.com"
-$To = "davidort@microsoft.com"
-$Subject = "Test Email - SendGrid via PowerShell"
+$From = "<EMAIL_ADDRESS_FROM>"
+$To = "<EMAIL_ADDRESS_TO>"
+$Subject = "<SUBJECT_EMAIL>"
 $Body = $html
-$SMTPServer = "smtp.sendgrid.net"
-$SMTPPort = 587
+$SMTPServer = "<SMTP_SERVER>"
+$SMTPPort = <PORT_SERVER>
 $APIKeyUser = "apikey"  # This is the literal string "apikey"
-$APIKeyPass = "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"  # Repla
+$APIKeyPass = "<API_KEY_EMAIL_PROVIDER>" 
 $pass = ConvertTo-SecureString -AsPlainText $APIKeyPass -Force
 $SecureString = $pass
 # Users you password securly
